@@ -31,8 +31,8 @@ const LocalStore = {
 };
 
 // OPTIONAL: Supabase adapter (deaktiviert, für später behalten)
-const SUPABASE_URL = ""; // z.B. https://your-project.supabase.co
-const SUPABASE_ANON_KEY = "";
+const SUPABASE_URL = "https://supabase.com/dashboard/project/soenuxdrckwhoiotndgw"; // z.B. https://your-project.supabase.co
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvZW51eGRyY2t3aG9pb3RuZGd3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzIyNTk3MiwiZXhwIjoyMDcyODAxOTcyfQ.f78SP0Hbk_7vCRS3sKeGNCOi2wS7WQcSow15f_r3tWw";
 const SupabaseStore = {
   async list() {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
