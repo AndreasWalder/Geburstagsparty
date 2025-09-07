@@ -4,7 +4,7 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-// 🎈 Ballon von ganz unten nach oben
+// 🎈 Ballon: Start immer unten an der Seite (links oder rechts)
 function Balloon({ size = 90, delay = 0 }) {
   const w = size;
   const h = Math.round(size * 1.25);
@@ -17,15 +17,17 @@ function Balloon({ size = 90, delay = 0 }) {
   ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  const startX = Math.random() * 90 + 5;
-  const drift = Math.random() * 40 - 20;
+  // Zufällig: links oder rechts starten
+  const fromLeft = Math.random() < 0.5;
+  const startX = fromLeft ? "-5%" : "105%"; // ganz links oder ganz rechts
+  const drift = fromLeft ? 40 : -40; // Ballons driften ins Bild
 
   return (
     <motion.div
       initial={{ y: "120%", x: 0, opacity: 0 }}
       animate={{
         y: ["120%", "-20%"],
-        x: [0, drift, drift * -0.5],
+        x: [0, drift, drift * 0.5],
         opacity: [0, 1, 0.9, 0],
         scale: [1, 1.05, 1],
       }}
@@ -36,12 +38,14 @@ function Balloon({ size = 90, delay = 0 }) {
         ease: "easeInOut",
       }}
       className="absolute"
-      style={{ left: `${startX}%`, width: w, height: h }}
+      style={{ left: startX, width: w, height: h }}
     >
+      {/* Ballon-Körper */}
       <div
         className="absolute inset-0 rounded-full shadow-xl"
         style={{ background: color, boxShadow: "0 8px 30px rgba(0,0,0,0.35)" }}
       />
+      {/* Glanzpunkt */}
       <div
         className="absolute rounded-full opacity-50"
         style={{
@@ -54,6 +58,7 @@ function Balloon({ size = 90, delay = 0 }) {
           transform: "rotate(-25deg)",
         }}
       />
+      {/* Knoten */}
       <div
         className="absolute"
         style={{
@@ -66,6 +71,7 @@ function Balloon({ size = 90, delay = 0 }) {
           borderRadius: 2,
         }}
       />
+      {/* Schnur */}
       <div
         className="absolute"
         style={{
@@ -91,8 +97,8 @@ function ConfettiPiece({ delay = 0 }) {
 
   return (
     <motion.div
-      initial={{ y: -40, opacity: 0, rotate }}
-      animate={{ y: ["-5%", "70%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
+      initial={{ y: -50, opacity: 0, rotate }}
+      animate={{ y: ["-10%", "70%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
       transition={{
         duration: 9 + Math.random() * 4,
         delay,
