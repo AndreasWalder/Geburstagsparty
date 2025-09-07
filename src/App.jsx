@@ -19,14 +19,14 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
 
   return (
     <motion.div
-      initial={{ y: 200, opacity: 0 }}
+      initial={{ y: 120, opacity: 0 }}
       animate={{
-        y: [-20, -250, -400],
+        y: [-20, -300, -500],
         opacity: [0, 1, 0.8, 0],
         scale: [1, 1.05, 1],
       }}
       transition={{
-        duration: 12,
+        duration: 10,
         delay,
         repeat: Infinity,
         ease: "easeInOut",
@@ -34,7 +34,6 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
       className={`relative ${className}`}
       style={{ width: w, height: h }}
     >
-      {/* Ballon-Körper */}
       <div
         className="absolute inset-0 rounded-full shadow-xl"
         style={{
@@ -42,7 +41,6 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
           boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
         }}
       />
-      {/* Glanzpunkt */}
       <div
         className="absolute rounded-full opacity-50"
         style={{
@@ -55,7 +53,6 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
           transform: "rotate(-25deg)",
         }}
       />
-      {/* Knoten */}
       <div
         className="absolute"
         style={{
@@ -68,7 +65,6 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
           borderRadius: 2,
         }}
       />
-      {/* Schnur */}
       <div
         className="absolute"
         style={{
@@ -82,6 +78,32 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
         }}
       />
     </motion.div>
+  );
+}
+
+// 🎊 Konfetti-Partikel
+function ConfettiPiece({ delay = 0 }) {
+  const colors = ["#3b82f6", "#e879f9", "#fbbf24", "#22d3ee", "#f472b6"];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  const left = Math.random() * 100; // Prozent vom Bildschirm
+  const rotate = Math.random() * 360;
+
+  return (
+    <motion.div
+      initial={{ y: -20, opacity: 0, rotate }}
+      animate={{ y: ["-5%", "105%"], opacity: [0, 1, 1, 0], rotate: rotate + 180 }}
+      transition={{
+        duration: 8 + Math.random() * 4,
+        delay,
+        repeat: Infinity,
+        ease: "linear",
+      }}
+      className="absolute w-2 h-3 rounded-sm"
+      style={{
+        left: `${left}%`,
+        backgroundColor: color,
+      }}
+    />
   );
 }
 
@@ -213,24 +235,32 @@ export default function RSVP40() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
-      {/* Hintergrund mit Ballons */}
+      {/* Hintergrund */}
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+        {/* Farbige Verläufe */}
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
 
         {/* Ballons links */}
         <div className="hidden xl:flex flex-col absolute left-16 bottom-0 space-y-12">
           <Balloon delay={0} size={90} />
-          <Balloon delay={4} size={70} />
-          <Balloon delay={8} size={80} />
+          <Balloon delay={2} size={70} />
+          <Balloon delay={4} size={80} />
+          <Balloon delay={6} size={75} />
         </div>
 
         {/* Ballons rechts */}
         <div className="hidden xl:flex flex-col absolute right-16 bottom-0 space-y-12">
-          <Balloon delay={2} size={85} />
-          <Balloon delay={6} size={75} />
-          <Balloon delay={10} size={95} />
+          <Balloon delay={1} size={85} />
+          <Balloon delay={3} size={65} />
+          <Balloon delay={5} size={95} />
+          <Balloon delay={7} size={78} />
         </div>
+
+        {/* Konfetti */}
+        {Array.from({ length: 20 }).map((_, i) => (
+          <ConfettiPiece key={i} delay={i * 0.4} />
+        ))}
       </div>
 
       {/* Header */}
