@@ -7,10 +7,11 @@ async function supabase(path, opts = {}) {
     apikey: key,
     Authorization: `Bearer ${key}`,
     Prefer: 'count=exact',
+    'Range-Unit': 'items',
+    Range: '0-0',
     ...(opts.headers || {})
   };
-  const r = await fetch(url, { ...opts, headers });
-  return r;
+  return fetch(url, { ...opts, headers });
 }
 
 export default async function handler(req, res) {
@@ -18,20 +19,19 @@ export default async function handler(req, res) {
   if (!base || !key) return res.status(500).send('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE');
 
   try {
-    const r = await supabase('rsvps?select=id&head=true', { method: 'GET' });
-    const range = r.headers.get('content-range') || '0/0';
-    const count = parseInt((range.split('/')[1] || '0'), 10);
+    // select=id + Range 0-0 -> minimales Array, aber Header enthält die Gesamtzahl: "0-0/123"
+    const r = await supabase('rsvps?select=id', { method: 'GET' });
+    const cr = r.headers.get('content-range') || '0-0/0';
+    const total = parseInt(cr.split('/')[1] || '0', 10);
 
-    // 🔒 Browser + CDN strikt keinen Cache erlauben
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-
-    res.status(200).send(JSON.stringify({ count }));
+    return res.status(200).send(JSON.stringify({ count: total }));
   } catch (e) {
     console.error(e);
     res.setHeader('Cache-Control', 'no-store, s-maxage=0');
-    res.status(500).send('Server Error');
+    return res.status(500).send('Server Error');
   }
 }
