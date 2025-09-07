@@ -4,34 +4,33 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-// 🎈 Schwebender Ballon (über gesamte Seite, zufällige Farbe & X-Drift)
+// 🎈 Ballon von ganz unten nach oben
 function Balloon({ size = 90, delay = 0 }) {
   const w = size;
   const h = Math.round(size * 1.25);
 
   const colors = [
-    "linear-gradient(135deg, rgb(59 130 246), rgb(96 165 250))", // blau
-    "linear-gradient(135deg, rgb(232 121 249), rgb(244 114 182))", // pink
-    "linear-gradient(135deg, rgb(251 191 36), rgb(253 224 71))", // amber
-    "linear-gradient(135deg, rgb(59 130 246), rgb(232 121 249), rgb(251 191 36))", // bunter gradient
+    "linear-gradient(135deg, rgb(59 130 246), rgb(96 165 250))",
+    "linear-gradient(135deg, rgb(232 121 249), rgb(244 114 182))",
+    "linear-gradient(135deg, rgb(251 191 36), rgb(253 224 71))",
+    "linear-gradient(135deg, rgb(59 130 246), rgb(232 121 249), rgb(251 191 36))",
   ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  // Zufällige horizontale Startposition (5%–95%) + Drift
   const startX = Math.random() * 90 + 5;
-  const drift = Math.random() * 40 - 20; // -20px bis +20px
+  const drift = Math.random() * 40 - 20;
 
   return (
     <motion.div
-      initial={{ y: "110%", x: 0, opacity: 0 }}
+      initial={{ y: "120%", x: 0, opacity: 0 }}
       animate={{
-        y: ["110%", "-20%"],
+        y: ["120%", "-20%"],
         x: [0, drift, drift * -0.5],
         opacity: [0, 1, 0.9, 0],
         scale: [1, 1.05, 1],
       }}
       transition={{
-        duration: 12 + Math.random() * 6,
+        duration: 14 + Math.random() * 6,
         delay,
         repeat: Infinity,
         ease: "easeInOut",
@@ -39,12 +38,10 @@ function Balloon({ size = 90, delay = 0 }) {
       className="absolute"
       style={{ left: `${startX}%`, width: w, height: h }}
     >
-      {/* Ballon-Körper */}
       <div
         className="absolute inset-0 rounded-full shadow-xl"
         style={{ background: color, boxShadow: "0 8px 30px rgba(0,0,0,0.35)" }}
       />
-      {/* Glanzpunkt */}
       <div
         className="absolute rounded-full opacity-50"
         style={{
@@ -57,7 +54,6 @@ function Balloon({ size = 90, delay = 0 }) {
           transform: "rotate(-25deg)",
         }}
       />
-      {/* Knoten */}
       <div
         className="absolute"
         style={{
@@ -70,7 +66,6 @@ function Balloon({ size = 90, delay = 0 }) {
           borderRadius: 2,
         }}
       />
-      {/* Schnur */}
       <div
         className="absolute"
         style={{
@@ -87,19 +82,19 @@ function Balloon({ size = 90, delay = 0 }) {
   );
 }
 
-// 🎊 Konfetti – größer, startet tiefer & fällt länger (sichtbar auf Handy)
+// 🎊 Konfetti nur bis ca. Hauptschrift (~70% Höhe)
 function ConfettiPiece({ delay = 0 }) {
   const colors = ["#3b82f6", "#e879f9", "#fbbf24", "#22d3ee", "#f472b6"];
   const color = colors[Math.floor(Math.random() * colors.length)];
-  const left = Math.random() * 100; // Prozent vom Screen
+  const left = Math.random() * 100;
   const rotate = Math.random() * 360;
 
   return (
     <motion.div
       initial={{ y: -40, opacity: 0, rotate }}
-      animate={{ y: ["-5%", "110%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
+      animate={{ y: ["-5%", "70%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
       transition={{
-        duration: 10 + Math.random() * 5,
+        duration: 9 + Math.random() * 4,
         delay,
         repeat: Infinity,
         ease: "linear",
@@ -117,7 +112,7 @@ export default function RSVP40() {
   const [people, setPeople] = useState([]);
   const [error, setError] = useState("");
   const [admin, setAdmin] = useState(false);
-  const [count, setCount] = useState(0); // öffentlicher Counter
+  const [count, setCount] = useState(0);
 
   async function loadCount() {
     try {
@@ -134,7 +129,7 @@ export default function RSVP40() {
         const j = await r.json();
         setPeople(j);
         setAdmin(true);
-        setCount(j.length); // sync für sichtbare Anzeige
+        setCount(j.length);
       } else {
         setAdmin(false);
       }
@@ -156,7 +151,6 @@ export default function RSVP40() {
     loadListIfAdmin();
     const id = setInterval(loadListIfAdmin, 15000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [admin]);
 
   async function handleAttend() {
@@ -229,24 +223,22 @@ export default function RSVP40() {
     setPeople([]);
   }
 
-  // Sichtbarer Counter: Admin → people.length; Gäste → count
   const visibleCount = admin ? people.length : count;
   const pct = Math.min(100, Math.ceil((visibleCount / TARGET) * 100));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
-      {/* Hintergrund (Ballons + Konfetti) */}
+      {/* Hintergrund */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* weiche Farbverläufe */}
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
 
-        {/* Ballons – nur 6, über Seite verteilt */}
+        {/* Ballons */}
         {Array.from({ length: 6 }).map((_, i) => (
           <Balloon key={i} delay={i * 2} size={70 + Math.random() * 30} />
         ))}
 
-        {/* Konfetti – dezenter Regen */}
+        {/* Konfetti */}
         {Array.from({ length: 15 }).map((_, i) => (
           <ConfettiPiece key={i} delay={i * 0.5} />
         ))}
@@ -254,7 +246,6 @@ export default function RSVP40() {
 
       {/* Inhalt */}
       <div className="relative z-10">
-        {/* Header */}
         <header className="max-w-4xl mx-auto px-6 pt-14 pb-6 text-center">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-fuchsia-400 to-amber-300">
@@ -352,11 +343,7 @@ export default function RSVP40() {
                         <div className="font-medium leading-tight text-gray-100">{p.name}</div>
                         <div className="text-xs text-gray-400">zugesagt: {new Date(p.created_at).toLocaleString()}</div>
                       </div>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1"
-                        title="Eintrag löschen"
-                      >
+                      <button onClick={() => handleDelete(p.id)} className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1" title="Eintrag löschen">
                         <Trash2 className="w-4 h-4" /> löschen
                       </button>
                     </motion.li>
