@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
   try {
     const chunks = []; for await (const c of req) chunks.push(c);
@@ -12,4 +12,4 @@ module.exports = async (req, res) => {
   } catch (e) {
     console.error(e); res.status(500).send('Server Error');
   }
-};
+}
