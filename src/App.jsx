@@ -125,7 +125,7 @@ export default function RSVP40() {
             Mein 40er – Let’s Party!
           </h1>
           <p className="mt-3 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
-            Es ist so weit: 40 Jahre voll mit Geschichten, Lachen und guten Menschen. Ich feiere – und du bist eingeladen!
+            40 Jahre jung – jetzt heißt’s: Spaß, Musik und gute Laune! Sei dabei!
           </p>
           <p className="mt-3 text-lg font-semibold text-blue-200">Freitag, 28. November · ab 18 Uhr · Eisarena Sillian</p>
         </motion.div>
