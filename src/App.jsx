@@ -4,7 +4,7 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-// 🎈 Ballon: Start immer unten an der Seite (links oder rechts)
+// 🎈 Ballon: Start immer Mitte unten, Drift nach links oder rechts
 function Balloon({ size = 90, delay = 0 }) {
   const w = size;
   const h = Math.round(size * 1.25);
@@ -17,17 +17,15 @@ function Balloon({ size = 90, delay = 0 }) {
   ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  // Zufällig: links oder rechts starten
-  const fromLeft = Math.random() < 0.5;
-  const startX = fromLeft ? "20%" : "90%"; // ganz links oder ganz rechts
-  const drift = fromLeft ? 40 : -40; // Ballons driften ins Bild
+  // Zufällig links oder rechts driften
+  const drift = Math.random() < 0.5 ? -40 : 40;
 
   return (
     <motion.div
-      initial={{ y: "120%", x: 0, opacity: 0 }}
+      initial={{ y: "120%", x: "-50%", opacity: 0 }}
       animate={{
         y: ["120%", "-20%"],
-        x: [0, drift, drift * 0.5],
+        x: [-50, drift, drift * 0.5],
         opacity: [0, 1, 0.9, 0],
         scale: [1, 1.05, 1],
       }}
@@ -38,7 +36,7 @@ function Balloon({ size = 90, delay = 0 }) {
         ease: "easeInOut",
       }}
       className="absolute"
-      style={{ left: startX, width: w, height: h }}
+      style={{ left: "50%", width: w, height: h }}
     >
       {/* Ballon-Körper */}
       <div
@@ -88,7 +86,7 @@ function Balloon({ size = 90, delay = 0 }) {
   );
 }
 
-// 🎊 Konfetti nur bis ca. Hauptschrift (~70% Höhe)
+// 🎊 Konfetti: bis zur Mitte (~50%) der Seite
 function ConfettiPiece({ delay = 0 }) {
   const colors = ["#3b82f6", "#e879f9", "#fbbf24", "#22d3ee", "#f472b6"];
   const color = colors[Math.floor(Math.random() * colors.length)];
@@ -97,8 +95,8 @@ function ConfettiPiece({ delay = 0 }) {
 
   return (
     <motion.div
-      initial={{ y: -50, opacity: 0, rotate }}
-      animate={{ y: ["-10%", "70%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
+      initial={{ y: -40, opacity: 0, rotate }}
+      animate={{ y: ["-5%", "50%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
       transition={{
         duration: 9 + Math.random() * 4,
         delay,
@@ -110,6 +108,7 @@ function ConfettiPiece({ delay = 0 }) {
     />
   );
 }
+
 
 export default function RSVP40() {
   const [name, setName] = useState("");
