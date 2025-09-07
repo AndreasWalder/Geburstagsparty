@@ -15,14 +15,15 @@ export default function RSVP40() {
 
   async function loadCount() {
     try {
-      const r = await fetch("/api/rsvps-count");
+      const r = await fetch("/api/rsvps-count", { cache: "no-store" });
       const j = await r.json();
       if (typeof j.count === "number") setCount(j.count);
     } catch {}
   }
+
   async function loadListIfAdmin() {
     try {
-      const r = await fetch("/api/rsvps");
+      const r = await fetch("/api/rsvps", { cache: "no-store" });
       if (r.status === 200) {
         const j = await r.json();
         setPeople(j);
@@ -37,9 +38,21 @@ export default function RSVP40() {
     }
   }
 
+  // Nur Count sofort + Polling
   useEffect(() => {
     loadCount();
+    const id = setInterval(loadCount, 15000);
+    return () => clearInterval(id);
   }, []);
+
+  // Admin-Liste erst nach Login laden + Polling solange admin=true
+  useEffect(() => {
+    if (!admin) return;
+    loadListIfAdmin();
+    const id = setInterval(loadListIfAdmin, 15000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin]);
 
   async function handleAttend() {
     setError("");
@@ -57,7 +70,7 @@ export default function RSVP40() {
       });
       if (!r.ok) throw new Error("post_failed");
       setName("");
-      setCount((c) => c + 1);
+      await loadCount(); // Zähler sofort aktualisieren
       if (admin) {
         const j = await r.json();
         setPeople((prev) => [...prev, j[0]]);
@@ -80,7 +93,7 @@ export default function RSVP40() {
       });
       if (!r.ok) throw new Error("delete_failed");
       setPeople((prev) => prev.filter((p) => p.id !== id));
-      setCount((c) => Math.max(0, c - 1));
+      await loadCount(); // Zähler sofort aktualisieren
     } catch {
       alert("Löschen fehlgeschlagen.");
     }
@@ -95,19 +108,21 @@ export default function RSVP40() {
       body: JSON.stringify({ pin }),
     });
     if (r.ok) {
-      setAdmin(true);
+      setAdmin(true);      // Liste lädt nun durch den admin-Effekt
       setLoading(true);
-      await loadListIfAdmin();
     } else {
       alert("Falsche PIN.");
     }
   }
-  function leaveAdmin() {
+
+  async function leaveAdmin() {
+    try { await fetch("/api/logout", { method: "POST" }); } catch {}
     setAdmin(false);
     setPeople([]);
   }
 
-  const pct = Math.min(100, Math.round((count / TARGET) * 100));
+  // Prozent: aufrunden, damit 1/40 = 3 %
+  const pct = Math.min(100, Math.ceil((count / TARGET) * 100));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
@@ -159,7 +174,7 @@ export default function RSVP40() {
             {/* Fortschritt */}
             <div className="mt-4">
               <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                <span>Ziel: {TARGET} Gäste</span>
+                <span>Ziel: {TARGET} Gäste · {count}/{TARGET}</span>
                 <span>{pct}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-700 overflow-hidden">
@@ -175,9 +190,7 @@ export default function RSVP40() {
                 placeholder="Dein Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAttend();
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAttend(); }}
                 className="px-3 py-2 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black/60 text-gray-100 placeholder:text-gray-400"
               />
               <button
@@ -188,11 +201,7 @@ export default function RSVP40() {
                 <Check className="w-4 h-4" /> Ich komme!
               </button>
             </div>
-            {error && (
-              <p className="text-sm text-rose-400" role="alert">
-                {error}
-              </p>
-            )}
+            {error && (<p className="text-sm text-rose-400" role="alert">{error}</p>)}
           </div>
         </section>
 
