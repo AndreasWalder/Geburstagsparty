@@ -21,9 +21,17 @@ export default async function handler(req, res) {
     const r = await supabase('rsvps?select=id&head=true', { method: 'GET' });
     const range = r.headers.get('content-range') || '0/0';
     const count = parseInt((range.split('/')[1] || '0'), 10);
+
+    // 🔒 Browser + CDN strikt keinen Cache erlauben
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     res.status(200).send(JSON.stringify({ count }));
   } catch (e) {
-    console.error(e); res.status(500).send('Server Error');
+    console.error(e);
+    res.setHeader('Cache-Control', 'no-store, s-maxage=0');
+    res.status(500).send('Server Error');
   }
 }
