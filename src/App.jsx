@@ -15,7 +15,7 @@ export default function RSVP40() {
 
   async function loadCount() {
     try {
-      const r = await fetch("/api/rsvps-count", { cache: "no-store" });
+      const r = await fetch(`/api/rsvps-count?t=${Date.now()}`, { cache: "no-store" });
       const j = await r.json();
       if (typeof j.count === "number") setCount(j.count);
     } catch {}
