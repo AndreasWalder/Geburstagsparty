@@ -4,7 +4,7 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-// 🎈 Ballon: Start immer Mitte unten, Drift nach links oder rechts
+/** 🎈 Ballon: Start Mitte ganz unten (100vh), Drift leicht nach links/rechts, fliegt nach oben raus (-20vh) */
 function Balloon({ size = 90, delay = 0 }) {
   const w = size;
   const h = Math.round(size * 1.25);
@@ -17,14 +17,14 @@ function Balloon({ size = 90, delay = 0 }) {
   ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  // Zufällig links oder rechts driften
+  // Zufällig links/rechts driften
   const drift = Math.random() < 0.5 ? -40 : 40;
 
   return (
     <motion.div
-      initial={{ y: "120%", x: "-50%", opacity: 0 }}
+      initial={{ y: "100vh", x: "-50%", opacity: 0 }}
       animate={{
-        y: ["120%", "-20%"],
+        y: ["100vh", "-20vh"],
         x: [-50, drift, drift * 0.5],
         opacity: [0, 1, 0.9, 0],
         scale: [1, 1.05, 1],
@@ -38,12 +38,12 @@ function Balloon({ size = 90, delay = 0 }) {
       className="absolute"
       style={{ left: "50%", width: w, height: h }}
     >
-      {/* Ballon-Körper */}
+      {/* Körper */}
       <div
         className="absolute inset-0 rounded-full shadow-xl"
         style={{ background: color, boxShadow: "0 8px 30px rgba(0,0,0,0.35)" }}
       />
-      {/* Glanzpunkt */}
+      {/* Glanz */}
       <div
         className="absolute rounded-full opacity-50"
         style={{
@@ -86,7 +86,7 @@ function Balloon({ size = 90, delay = 0 }) {
   );
 }
 
-// 🎊 Konfetti: bis zur Mitte (~50%) der Seite
+/** 🎊 Konfetti: fällt von -10vh bis 60vh (Mitte/unter den Titel) – sichtbar auch auf Mobile */
 function ConfettiPiece({ delay = 0 }) {
   const colors = ["#3b82f6", "#e879f9", "#fbbf24", "#22d3ee", "#f472b6"];
   const color = colors[Math.floor(Math.random() * colors.length)];
@@ -95,8 +95,8 @@ function ConfettiPiece({ delay = 0 }) {
 
   return (
     <motion.div
-      initial={{ y: -40, opacity: 0, rotate }}
-      animate={{ y: ["-5%", "50%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
+      initial={{ y: "-10vh", opacity: 0, rotate }}
+      animate={{ y: ["-10vh", "60vh"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
       transition={{
         duration: 9 + Math.random() * 4,
         delay,
@@ -108,7 +108,6 @@ function ConfettiPiece({ delay = 0 }) {
     />
   );
 }
-
 
 export default function RSVP40() {
   const [name, setName] = useState("");
@@ -156,6 +155,7 @@ export default function RSVP40() {
     loadListIfAdmin();
     const id = setInterval(loadListIfAdmin, 15000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [admin]);
 
   async function handleAttend() {
@@ -233,17 +233,18 @@ export default function RSVP40() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
-      {/* Hintergrund */}
+      {/* Hintergrund-Layer */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* weiche Verläufe */}
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
 
-        {/* Ballons */}
+        {/* 6 Ballons – starten jetzt wirklich aus 100vh */}
         {Array.from({ length: 6 }).map((_, i) => (
           <Balloon key={i} delay={i * 2} size={70 + Math.random() * 30} />
         ))}
 
-        {/* Konfetti */}
+        {/* Konfetti – fällt bis ~Mitte (60vh) */}
         {Array.from({ length: 15 }).map((_, i) => (
           <ConfettiPiece key={i} delay={i * 0.5} />
         ))}
@@ -265,7 +266,6 @@ export default function RSVP40() {
           </motion.div>
         </header>
 
-        {/* Content */}
         <main className="max-w-4xl mx-auto px-6 pb-16">
           <section className="rounded-3xl shadow-2xl bg-black/40 backdrop-blur border border-blue-400/20">
             <div className="px-6 pt-6 pb-3 border-b border-blue-400/20">
