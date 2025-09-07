@@ -39,7 +39,6 @@ export default function RSVP40() {
 
   useEffect(() => {
     loadCount();
-    loadListIfAdmin();
   }, []);
 
   async function handleAttend() {
