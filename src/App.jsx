@@ -11,7 +11,7 @@ export default function RSVP40() {
   const [people, setPeople] = useState([]);
   const [error, setError] = useState("");
   const [admin, setAdmin] = useState(false);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0); // öffentlicher Zähler
 
   async function loadCount() {
     try {
@@ -28,6 +28,7 @@ export default function RSVP40() {
         const j = await r.json();
         setPeople(j);
         setAdmin(true);
+        setCount(j.length); // Sync Count mit Admin-Liste
       } else {
         setAdmin(false);
       }
@@ -38,14 +39,14 @@ export default function RSVP40() {
     }
   }
 
-  // Nur Count sofort + Polling
+  // Öffentlich: Count beim Start + Polling
   useEffect(() => {
     loadCount();
     const id = setInterval(loadCount, 15000);
     return () => clearInterval(id);
   }, []);
 
-  // Admin-Liste erst nach Login laden + Polling solange admin=true
+  // Admin: Liste nach Login + Polling solange admin=true
   useEffect(() => {
     if (!admin) return;
     loadListIfAdmin();
@@ -70,10 +71,14 @@ export default function RSVP40() {
       });
       if (!r.ok) throw new Error("post_failed");
       setName("");
-      await loadCount(); // Zähler sofort aktualisieren
+
+      // Zähler/Liste sofort aktualisieren
       if (admin) {
         const j = await r.json();
         setPeople((prev) => [...prev, j[0]]);
+        setCount((c) => c + 1);
+      } else {
+        await loadCount();
       }
     } catch (e) {
       setError("Ups – Anmeldung fehlgeschlagen. Bitte später erneut versuchen.");
@@ -93,7 +98,7 @@ export default function RSVP40() {
       });
       if (!r.ok) throw new Error("delete_failed");
       setPeople((prev) => prev.filter((p) => p.id !== id));
-      await loadCount(); // Zähler sofort aktualisieren
+      setCount((c) => Math.max(0, c - 1)); // sofort sync
     } catch {
       alert("Löschen fehlgeschlagen.");
     }
@@ -108,7 +113,7 @@ export default function RSVP40() {
       body: JSON.stringify({ pin }),
     });
     if (r.ok) {
-      setAdmin(true);      // Liste lädt nun durch den admin-Effekt
+      setAdmin(true); // Liste wird im admin-Effekt geladen
       setLoading(true);
     } else {
       alert("Falsche PIN.");
@@ -121,8 +126,9 @@ export default function RSVP40() {
     setPeople([]);
   }
 
-  // Prozent: aufrunden, damit 1/40 = 3 %
-  const pct = Math.min(100, Math.ceil((count / TARGET) * 100));
+  // Sichtbarer Zähler: für Admin die Liste, sonst der öffentliche Count
+  const visibleCount = admin ? people.length : count;
+  const pct = Math.min(100, Math.ceil((visibleCount / TARGET) * 100)); // aufrunden
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
@@ -156,7 +162,7 @@ export default function RSVP40() {
               <div className="flex items-center gap-3 text-sm text-gray-300">
                 <div className="flex items-center gap-2">
                   <Users2 className="w-4 h-4" />
-                  <span>{loading ? "Lade…" : `${count} Zusage${count === 1 ? "" : "n"}`}</span>
+                  <span>{loading ? "Lade…" : `${visibleCount} Zusage${visibleCount === 1 ? "" : "n"}`}</span>
                 </div>
                 <span className="opacity-40">|</span>
                 {!admin ? (
@@ -174,7 +180,7 @@ export default function RSVP40() {
             {/* Fortschritt */}
             <div className="mt-4">
               <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                <span>Ziel: {TARGET} Gäste · {count}/{TARGET}</span>
+                <span>Ziel: {TARGET} Gäste · {visibleCount}/{TARGET}</span>
                 <span>{pct}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-700 overflow-hidden">
@@ -205,7 +211,7 @@ export default function RSVP40() {
           </div>
         </section>
 
-        {/* Guest list (nur Admin) */}
+        {/* Gästeliste (nur Admin) */}
         {admin && (
           <section className="mt-6">
             <h2 className="text-lg font-semibold mb-3">Bisher zugesagt</h2>
