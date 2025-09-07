@@ -4,7 +4,7 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-/** 🎈 Ballon: Start zufällig unten (über die ganze Breite), Drift leicht nach links/rechts */
+/** 🎈 Ein einzelner Ballon */
 function Balloon({ size = 90, delay = 0 }) {
   const w = size;
   const h = Math.round(size * 1.25);
@@ -17,9 +17,8 @@ function Balloon({ size = 90, delay = 0 }) {
   ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  // random Start quer über den unteren Rand (in vw, damit viewport-breit)
-  const startXvw = Math.random() * 92 + 4; // 4vw–96vw -> nicht ganz am Rand
-  const drift = (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 40); // ~20–60px seitlich
+  const startXvw = Math.random() * 92 + 4; // zufällige Startposition unten
+  const drift = (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 40);
 
   return (
     <motion.div
@@ -39,12 +38,10 @@ function Balloon({ size = 90, delay = 0 }) {
       className="absolute"
       style={{ left: `${startXvw}vw`, width: w, height: h }}
     >
-      {/* Körper */}
       <div
         className="absolute inset-0 rounded-full shadow-xl"
         style={{ background: color, boxShadow: "0 8px 30px rgba(0,0,0,0.35)" }}
       />
-      {/* Glanz */}
       <div
         className="absolute rounded-full opacity-50"
         style={{
@@ -57,7 +54,6 @@ function Balloon({ size = 90, delay = 0 }) {
           transform: "rotate(-25deg)",
         }}
       />
-      {/* Knoten */}
       <div
         className="absolute"
         style={{
@@ -70,7 +66,6 @@ function Balloon({ size = 90, delay = 0 }) {
           borderRadius: 2,
         }}
       />
-      {/* Schnur */}
       <div
         className="absolute"
         style={{
@@ -87,7 +82,36 @@ function Balloon({ size = 90, delay = 0 }) {
   );
 }
 
-/** 🎊 Konfetti: fällt von -10vh bis ~Mitte (60vh) – sichtbar auch auf Mobile */
+/** 🎈🎈 BalloonsLayer: rendert weniger Ballons auf Mobile */
+function BalloonsLayer({ desktopCount = 6, mobileCount = 3, minSize = 70, maxSize = 100, startDelayStep = 2 }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange);
+    return () => {
+      mq.removeEventListener ? mq.removeEventListener("change", onChange) : mq.removeListener(onChange);
+    };
+  }, []);
+
+  const count = isMobile ? mobileCount : desktopCount;
+
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <Balloon
+          key={i}
+          delay={i * startDelayStep}
+          size={Math.round(minSize + Math.random() * (maxSize - minSize))}
+        />
+      ))}
+    </>
+  );
+}
+
+/** 🎊 Konfetti */
 function ConfettiPiece({ delay = 0 }) {
   const colors = ["#3b82f6", "#e879f9", "#fbbf24", "#22d3ee", "#f472b6"];
   const color = colors[Math.floor(Math.random() * colors.length)];
@@ -156,7 +180,6 @@ export default function RSVP40() {
     loadListIfAdmin();
     const id = setInterval(loadListIfAdmin, 15000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [admin]);
 
   async function handleAttend() {
@@ -236,16 +259,13 @@ export default function RSVP40() {
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
       {/* Hintergrund-Layer */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* weiche Verläufe */}
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
 
-        {/* 6 Ballons – starten random am unteren Rand (100vh) */}
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Balloon key={i} delay={i * 2} size={70 + Math.random() * 30} />
-        ))}
+        {/* 🎈 Ballons (automatisch weniger auf Mobile) */}
+        <BalloonsLayer desktopCount={6} mobileCount={3} />
 
-        {/* Konfetti – fällt bis ~Mitte (60vh) */}
+        {/* 🎊 Konfetti */}
         {Array.from({ length: 15 }).map((_, i) => (
           <ConfettiPiece key={i} delay={i * 0.5} />
         ))}
@@ -326,7 +346,6 @@ export default function RSVP40() {
             </div>
           </section>
 
-          {/* Gästeliste (nur Admin) */}
           {admin && (
             <section className="mt-6">
               <h2 className="text-lg font-semibold mb-3">Bisher zugesagt</h2>
