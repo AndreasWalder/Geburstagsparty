@@ -1,4 +1,3 @@
-const fetch = global.fetch || require('node-fetch');
 const base = process.env.SUPABASE_URL;
 const key  = process.env.SUPABASE_SERVICE_ROLE;
 
@@ -9,17 +8,18 @@ function isAdmin(req) {
 
 async function supabase(path, opts = {}) {
   const url = `${base}/rest/v1/${path}`;
-  const headers = Object.assign({
+  const headers = {
     apikey: key,
     Authorization: `Bearer ${key}`,
     'Content-Type': 'application/json',
-    Prefer: 'return=representation'
-  }, opts.headers || {});
-  const res = await fetch(url, { ...opts, headers });
-  return res;
+    Prefer: 'return=representation',
+    ...(opts.headers || {})
+  };
+  const r = await fetch(url, { ...opts, headers });
+  return r;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (!base || !key) return res.status(500).send('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE');
 
   try {
@@ -36,6 +36,7 @@ module.exports = async (req, res) => {
       const body = JSON.parse(Buffer.concat(chunks).toString() || '{}');
       const name = (body.name || '').toString();
       if (name.length < 2 || name.length > 60) return res.status(400).json({ error: 'invalid_name' });
+
       const r = await supabase('rsvps', { method: 'POST', body: JSON.stringify({ name }) });
       const txt = await r.text();
       res.setHeader('Content-Type', 'application/json');
@@ -48,6 +49,7 @@ module.exports = async (req, res) => {
       const body = JSON.parse(Buffer.concat(chunks).toString() || '{}');
       const id = (body.id || '').toString();
       if (!id) return res.status(400).json({ error: 'missing_id' });
+
       const r = await supabase(`rsvps?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
       return res.status(r.ok ? 200 : r.status).send(r.ok ? 'ok' : 'error');
     }
@@ -56,4 +58,4 @@ module.exports = async (req, res) => {
   } catch (e) {
     console.error(e); return res.status(500).send('Server Error');
   }
-};
+}
