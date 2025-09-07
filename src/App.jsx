@@ -4,6 +4,69 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
+// 🎈 Ballon-Komponente
+function Balloon({ size = 90, delay = 0, className = "" }) {
+  const w = size;
+  const h = Math.round(size * 1.2);
+  return (
+    <motion.div
+      initial={{ y: 0, x: 0, rotate: 0 }}
+      animate={{ y: [-6, -18, -6], x: [0, 4, 0], rotate: [-1.2, 1.2, -1.2] }}
+      transition={{ duration: 3.6, delay, repeat: Infinity, ease: "easeInOut" }}
+      className={`relative ${className}`}
+      style={{ width: w, height: h }}
+    >
+      <div
+        className="absolute inset-0 rounded-full shadow-xl"
+        style={{
+          background:
+            "linear-gradient(135deg, rgb(59 130 246), rgb(232 121 249), rgb(251 191 36))",
+          filter: "saturate(1.05) brightness(0.95)",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
+        }}
+      />
+      <div
+        className="absolute rounded-full opacity-50"
+        style={{
+          top: h * 0.18,
+          left: w * 0.18,
+          width: w * 0.25,
+          height: h * 0.18,
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0))",
+          transform: "rotate(-25deg)",
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          left: "50%",
+          bottom: -6,
+          width: 10,
+          height: 10,
+          transform: "translateX(-50%) rotate(45deg)",
+          background:
+            "linear-gradient(135deg, rgb(232 121 249), rgb(59 130 246))",
+          borderRadius: 2,
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          left: "calc(50% - 1px)",
+          bottom: -6,
+          width: 2,
+          height: h * 0.9,
+          background:
+            "linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255,255,255,0.08))",
+          borderRadius: 1,
+          filter: "blur(0.2px)",
+        }}
+      />
+    </motion.div>
+  );
+}
+
 export default function RSVP40() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -11,11 +74,13 @@ export default function RSVP40() {
   const [people, setPeople] = useState([]);
   const [error, setError] = useState("");
   const [admin, setAdmin] = useState(false);
-  const [count, setCount] = useState(0); // öffentlicher Zähler
+  const [count, setCount] = useState(0);
 
   async function loadCount() {
     try {
-      const r = await fetch(`/api/rsvps-count?t=${Date.now()}`, { cache: "no-store" });
+      const r = await fetch(`/api/rsvps-count?t=${Date.now()}`, {
+        cache: "no-store",
+      });
       const j = await r.json();
       if (typeof j.count === "number") setCount(j.count);
     } catch {}
@@ -28,7 +93,7 @@ export default function RSVP40() {
         const j = await r.json();
         setPeople(j);
         setAdmin(true);
-        setCount(j.length); // Sync Count mit Admin-Liste
+        setCount(j.length);
       } else {
         setAdmin(false);
       }
@@ -39,14 +104,12 @@ export default function RSVP40() {
     }
   }
 
-  // Öffentlich: Count beim Start + Polling
   useEffect(() => {
     loadCount();
     const id = setInterval(loadCount, 15000);
     return () => clearInterval(id);
   }, []);
 
-  // Admin: Liste nach Login + Polling solange admin=true
   useEffect(() => {
     if (!admin) return;
     loadListIfAdmin();
@@ -72,7 +135,6 @@ export default function RSVP40() {
       if (!r.ok) throw new Error("post_failed");
       setName("");
 
-      // Zähler/Liste sofort aktualisieren
       if (admin) {
         const j = await r.json();
         setPeople((prev) => [...prev, j[0]]);
@@ -80,7 +142,7 @@ export default function RSVP40() {
       } else {
         await loadCount();
       }
-    } catch (e) {
+    } catch {
       setError("Ups – Anmeldung fehlgeschlagen. Bitte später erneut versuchen.");
     } finally {
       setSubmitting(false);
@@ -98,7 +160,7 @@ export default function RSVP40() {
       });
       if (!r.ok) throw new Error("delete_failed");
       setPeople((prev) => prev.filter((p) => p.id !== id));
-      setCount((c) => Math.max(0, c - 1)); // sofort sync
+      setCount((c) => Math.max(0, c - 1));
     } catch {
       alert("Löschen fehlgeschlagen.");
     }
@@ -113,7 +175,7 @@ export default function RSVP40() {
       body: JSON.stringify({ pin }),
     });
     if (r.ok) {
-      setAdmin(true); // Liste wird im admin-Effekt geladen
+      setAdmin(true);
       setLoading(true);
     } else {
       alert("Falsche PIN.");
@@ -121,33 +183,54 @@ export default function RSVP40() {
   }
 
   async function leaveAdmin() {
-    try { await fetch("/api/logout", { method: "POST" }); } catch {}
+    try {
+      await fetch("/api/logout", { method: "POST" });
+    } catch {}
     setAdmin(false);
     setPeople([]);
   }
 
-  // Sichtbarer Zähler: für Admin die Liste, sonst der öffentliche Count
   const visibleCount = admin ? people.length : count;
-  const pct = Math.min(100, Math.ceil((visibleCount / TARGET) * 100)); // aufrunden
+  const pct = Math.min(100, Math.ceil((visibleCount / TARGET) * 100));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
-      {/* Deko-Bubbles */}
+      {/* Hintergrund mit Ballons */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
+
+        {/* Ballons links */}
+        <div className="hidden xl:block absolute left-10 top-48 space-y-6">
+          <Balloon delay={0} size={92} />
+          <Balloon delay={0.6} size={70} className="ml-16 opacity-90" />
+          <Balloon delay={1.2} size={80} className="ml-8 opacity-80" />
+        </div>
+
+        {/* Ballons rechts */}
+        <div className="hidden xl:block absolute right-10 top-48 space-y-6">
+          <Balloon delay={0.2} size={88} />
+          <Balloon delay={0.9} size={72} className="mr-16 opacity-90" />
+          <Balloon delay={1.5} size={78} className="mr-8 opacity-80" />
+        </div>
       </div>
 
       {/* Header */}
       <header className="max-w-4xl mx-auto px-6 pt-14 pb-6 text-center">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <h1 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-fuchsia-400 to-amber-300">
             Mein 40er – Let’s Party!
           </h1>
           <p className="mt-3 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
             40 Jahre jung – jetzt heißt’s: Spaß, Musik und gute Laune! Sei dabei!
           </p>
-          <p className="mt-3 text-lg font-semibold text-blue-200">Freitag, 28. November · ab 18 Uhr · Eisarena Sillian</p>
+          <p className="mt-3 text-lg font-semibold text-blue-200">
+            Freitag, 28. November · ab 18 Uhr · Eisarena Sillian
+          </p>
         </motion.div>
       </header>
 
@@ -162,15 +245,27 @@ export default function RSVP40() {
               <div className="flex items-center gap-3 text-sm text-gray-300">
                 <div className="flex items-center gap-2">
                   <Users2 className="w-4 h-4" />
-                  <span>{loading ? "Lade…" : `${visibleCount} Zusage${visibleCount === 1 ? "" : "n"}`}</span>
+                  <span>
+                    {loading
+                      ? "Lade…"
+                      : `${visibleCount} Zusage${
+                          visibleCount === 1 ? "" : "n"
+                        }`}
+                  </span>
                 </div>
                 <span className="opacity-40">|</span>
                 {!admin ? (
-                  <button onClick={enterAdmin} className="flex items-center gap-1 text-xs text-blue-300 hover:text-blue-200">
+                  <button
+                    onClick={enterAdmin}
+                    className="flex items-center gap-1 text-xs text-blue-300 hover:text-blue-200"
+                  >
                     <Lock className="w-4 h-4" /> Admin
                   </button>
                 ) : (
-                  <button onClick={leaveAdmin} className="flex items-center gap-1 text-xs text-amber-300 hover:text-amber-200">
+                  <button
+                    onClick={leaveAdmin}
+                    className="flex items-center gap-1 text-xs text-amber-300 hover:text-amber-200"
+                  >
                     <Shield className="w-4 h-4" /> Admin-Modus
                   </button>
                 )}
@@ -180,11 +275,16 @@ export default function RSVP40() {
             {/* Fortschritt */}
             <div className="mt-4">
               <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                <span>Ziel: {TARGET} Gäste · {visibleCount}/{TARGET}</span>
+                <span>
+                  Ziel: {TARGET} Gäste · {visibleCount}/{TARGET}
+                </span>
                 <span>{pct}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-700 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-blue-500 via-fuchsia-500 to-amber-400" style={{ width: `${pct}%` }} />
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 via-fuchsia-500 to-amber-400"
+                  style={{ width: `${pct}%` }}
+                />
               </div>
             </div>
           </div>
@@ -196,7 +296,9 @@ export default function RSVP40() {
                 placeholder="Dein Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAttend(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAttend();
+                }}
                 className="px-3 py-2 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black/60 text-gray-100 placeholder:text-gray-400"
               />
               <button
@@ -207,7 +309,11 @@ export default function RSVP40() {
                 <Check className="w-4 h-4" /> Ich komme!
               </button>
             </div>
-            {error && (<p className="text-sm text-rose-400" role="alert">{error}</p>)}
+            {error && (
+              <p className="text-sm text-rose-400" role="alert">
+                {error}
+              </p>
+            )}
           </div>
         </section>
 
@@ -226,15 +332,23 @@ export default function RSVP40() {
                     key={p.id ?? `${p.name}-${p.created_at}-${idx}`}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: Math.min(idx * 0.03, 0.3) }}
+                    transition={{
+                      duration: 0.25,
+                      delay: Math.min(idx * 0.03, 0.3),
+                    }}
                     className="flex items-center gap-3 bg-black/50 rounded-xl p-3 shadow-sm border border-blue-400/20"
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 via-fuchsia-400 to-amber-300 flex items-center justify-center text-lg">
                       {"🎉"}
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium leading-tight text-gray-100">{p.name}</div>
-                      <div className="text-xs text-gray-400">zugesagt: {new Date(p.created_at).toLocaleString()}</div>
+                      <div className="font-medium leading-tight text-gray-100">
+                        {p.name}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        zugesagt:{" "}
+                        {new Date(p.created_at).toLocaleString()}
+                      </div>
                     </div>
                     <button
                       onClick={() => handleDelete(p.id)}
