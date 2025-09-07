@@ -4,27 +4,45 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-// 🎈 Ballon-Komponente
+// 🎈 Schwebender Ballon mit zufälligen Farben
 function Balloon({ size = 90, delay = 0, className = "" }) {
   const w = size;
-  const h = Math.round(size * 1.2);
+  const h = Math.round(size * 1.25);
+
+  const colors = [
+    "linear-gradient(135deg, rgb(59 130 246), rgb(96 165 250))", // blau
+    "linear-gradient(135deg, rgb(232 121 249), rgb(244 114 182))", // pink
+    "linear-gradient(135deg, rgb(251 191 36), rgb(253 224 71))", // amber
+    "linear-gradient(135deg, rgb(59 130 246), rgb(232 121 249), rgb(251 191 36))", // bunter gradient
+  ];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+
   return (
     <motion.div
-      initial={{ y: 0, x: 0, rotate: 0 }}
-      animate={{ y: [-6, -18, -6], x: [0, 4, 0], rotate: [-1.2, 1.2, -1.2] }}
-      transition={{ duration: 3.6, delay, repeat: Infinity, ease: "easeInOut" }}
+      initial={{ y: 200, opacity: 0 }}
+      animate={{
+        y: [-20, -250, -400],
+        opacity: [0, 1, 0.8, 0],
+        scale: [1, 1.05, 1],
+      }}
+      transition={{
+        duration: 12,
+        delay,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
       className={`relative ${className}`}
       style={{ width: w, height: h }}
     >
+      {/* Ballon-Körper */}
       <div
         className="absolute inset-0 rounded-full shadow-xl"
         style={{
-          background:
-            "linear-gradient(135deg, rgb(59 130 246), rgb(232 121 249), rgb(251 191 36))",
-          filter: "saturate(1.05) brightness(0.95)",
+          background: color,
           boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
         }}
       />
+      {/* Glanzpunkt */}
       <div
         className="absolute rounded-full opacity-50"
         style={{
@@ -33,10 +51,11 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
           width: w * 0.25,
           height: h * 0.18,
           background:
-            "linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0))",
+            "linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0))",
           transform: "rotate(-25deg)",
         }}
       />
+      {/* Knoten */}
       <div
         className="absolute"
         style={{
@@ -45,22 +64,21 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
           width: 10,
           height: 10,
           transform: "translateX(-50%) rotate(45deg)",
-          background:
-            "linear-gradient(135deg, rgb(232 121 249), rgb(59 130 246))",
+          background: color,
           borderRadius: 2,
         }}
       />
+      {/* Schnur */}
       <div
         className="absolute"
         style={{
           left: "calc(50% - 1px)",
           bottom: -6,
           width: 2,
-          height: h * 0.9,
+          height: h * 1.1,
           background:
-            "linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255,255,255,0.08))",
+            "linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0.1))",
           borderRadius: 1,
-          filter: "blur(0.2px)",
         }}
       />
     </motion.div>
@@ -196,22 +214,22 @@ export default function RSVP40() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
       {/* Hintergrund mit Ballons */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
 
         {/* Ballons links */}
-        <div className="hidden xl:block absolute left-10 top-48 space-y-6">
-          <Balloon delay={0} size={92} />
-          <Balloon delay={0.6} size={70} className="ml-16 opacity-90" />
-          <Balloon delay={1.2} size={80} className="ml-8 opacity-80" />
+        <div className="hidden xl:flex flex-col absolute left-16 bottom-0 space-y-12">
+          <Balloon delay={0} size={90} />
+          <Balloon delay={4} size={70} />
+          <Balloon delay={8} size={80} />
         </div>
 
         {/* Ballons rechts */}
-        <div className="hidden xl:block absolute right-10 top-48 space-y-6">
-          <Balloon delay={0.2} size={88} />
-          <Balloon delay={0.9} size={72} className="mr-16 opacity-90" />
-          <Balloon delay={1.5} size={78} className="mr-8 opacity-80" />
+        <div className="hidden xl:flex flex-col absolute right-16 bottom-0 space-y-12">
+          <Balloon delay={2} size={85} />
+          <Balloon delay={6} size={75} />
+          <Balloon delay={10} size={95} />
         </div>
       </div>
 
@@ -346,8 +364,7 @@ export default function RSVP40() {
                         {p.name}
                       </div>
                       <div className="text-xs text-gray-400">
-                        zugesagt:{" "}
-                        {new Date(p.created_at).toLocaleString()}
+                        zugesagt: {new Date(p.created_at).toLocaleString()}
                       </div>
                     </div>
                     <button
