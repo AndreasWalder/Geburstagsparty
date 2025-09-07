@@ -4,7 +4,7 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-/** 🎈 Ballon: Start Mitte ganz unten (100vh), Drift leicht nach links/rechts, fliegt nach oben raus (-20vh) */
+/** 🎈 Ballon: Start zufällig unten (über die ganze Breite), Drift leicht nach links/rechts */
 function Balloon({ size = 90, delay = 0 }) {
   const w = size;
   const h = Math.round(size * 1.25);
@@ -17,15 +17,16 @@ function Balloon({ size = 90, delay = 0 }) {
   ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  // Zufällig links/rechts driften
-  const drift = Math.random() < 0.5 ? -40 : 40;
+  // random Start quer über den unteren Rand (in vw, damit viewport-breit)
+  const startXvw = Math.random() * 92 + 4; // 4vw–96vw -> nicht ganz am Rand
+  const drift = (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 40); // ~20–60px seitlich
 
   return (
     <motion.div
-      initial={{ y: "100vh", x: "-50%", opacity: 0 }}
+      initial={{ y: "100vh", x: 0, opacity: 0 }}
       animate={{
         y: ["100vh", "-20vh"],
-        x: [-50, drift, drift * 0.5],
+        x: [0, drift, drift * 0.5],
         opacity: [0, 1, 0.9, 0],
         scale: [1, 1.05, 1],
       }}
@@ -36,7 +37,7 @@ function Balloon({ size = 90, delay = 0 }) {
         ease: "easeInOut",
       }}
       className="absolute"
-      style={{ left: "50%", width: w, height: h }}
+      style={{ left: `${startXvw}vw`, width: w, height: h }}
     >
       {/* Körper */}
       <div
@@ -86,7 +87,7 @@ function Balloon({ size = 90, delay = 0 }) {
   );
 }
 
-/** 🎊 Konfetti: fällt von -10vh bis 60vh (Mitte/unter den Titel) – sichtbar auch auf Mobile */
+/** 🎊 Konfetti: fällt von -10vh bis ~Mitte (60vh) – sichtbar auch auf Mobile */
 function ConfettiPiece({ delay = 0 }) {
   const colors = ["#3b82f6", "#e879f9", "#fbbf24", "#22d3ee", "#f472b6"];
   const color = colors[Math.floor(Math.random() * colors.length)];
@@ -239,7 +240,7 @@ export default function RSVP40() {
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
 
-        {/* 6 Ballons – starten jetzt wirklich aus 100vh */}
+        {/* 6 Ballons – starten random am unteren Rand (100vh) */}
         {Array.from({ length: 6 }).map((_, i) => (
           <Balloon key={i} delay={i * 2} size={70 + Math.random() * 30} />
         ))}
