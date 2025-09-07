@@ -19,7 +19,7 @@ function Balloon({ size = 90, delay = 0 }) {
 
   // Zufällig: links oder rechts starten
   const fromLeft = Math.random() < 0.5;
-  const startX = fromLeft ? "-5%" : "105%"; // ganz links oder ganz rechts
+  const startX = fromLeft ? "20%" : "90%"; // ganz links oder ganz rechts
   const drift = fromLeft ? 40 : -40; // Ballons driften ins Bild
 
   return (
