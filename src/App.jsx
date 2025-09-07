@@ -1,150 +1,70 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
-// --- Simple storage adapters ---------------------------------------------
-const localKey = "rsvp_attendees_40th";
-const adminKey = "rsvp_admin_40th";
+const TARGET = 40;
 
-const LocalStore = {
-  async list() {
-    try {
-      const raw = localStorage.getItem(localKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  },
-  async add(item) {
-    const all = await LocalStore.list();
-    const withId = { id: crypto.randomUUID(), ...item };
-    const next = [...all, withId];
-    localStorage.setItem(localKey, JSON.stringify(next));
-    return withId;
-  },
-  async remove(id) {
-    const all = await LocalStore.list();
-    const next = all.filter((x) => x.id !== id);
-    localStorage.setItem(localKey, JSON.stringify(next));
-    return true;
-  },
-};
-
-// OPTIONAL: Supabase adapter (deaktiviert, für später behalten)
-const SUPABASE_URL = "https://supabase.com/dashboard/project/soenuxdrckwhoiotndgw"; // z.B. https://your-project.supabase.co
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvZW51eGRyY2t3aG9pb3RuZGd3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzIyNTk3MiwiZXhwIjoyMDcyODAxOTcyfQ.f78SP0Hbk_7vCRS3sKeGNCOi2wS7WQcSow15f_r3tWw";
-const SupabaseStore = {
-  async list() {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rsvps?select=*&order=created_at.asc`, {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-    if (!res.ok) throw new Error("Failed to fetch RSVPs from Supabase");
-    return await res.json();
-  },
-  async add(item) {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rsvps`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify({ name: item.name }),
-    });
-    if (!res.ok) throw new Error("Failed to add RSVP to Supabase");
-    const [created] = await res.json();
-    return created;
-  },
-  async remove(id) {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rsvps?id=eq.${id}`, {
-      method: "DELETE",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-    });
-    if (!res.ok) throw new Error("Failed to delete RSVP from Supabase");
-    return true;
-  },
-};
-
-// Utility helpers -----------------------------------------------------------
-const emojis = ["🎉", "🎈", "🎂", "🍾", "🥳", "🎊", "🍰", "🕺", "💃", "🍹"]; 
-const pickEmoji = (seed) => emojis[Math.abs(hashString(seed)) % emojis.length];
-function hashString(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (h << 5) - h + str.charCodeAt(i);
-  return h | 0;
-}
-const formatTime = (d) => new Date(d).toLocaleString();
-
-const TARGET = 40; // Ziel-Anzahl Gäste für Fortschrittsbalken (anpassbar)
-const ADMIN_PIN = (import.meta.env?.VITE_ADMIN_PIN ?? "AndyA1").toString();
-
-// Main component ------------------------------------------------------------
 export default function RSVP40() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [people, setPeople] = useState([]);
   const [error, setError] = useState("");
-  const [admin, setAdmin] = useState(() => localStorage.getItem(adminKey) === "1");
+  const [admin, setAdmin] = useState(false);
+  const [count, setCount] = useState(0);
 
-  const activeStore = useMemo(() => (SUPABASE_URL && SUPABASE_ANON_KEY ? "supabase" : "local"), []);
-
-  // Load existing RSVPs
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        const fromSupabase = await SupabaseStore.list();
-        const list = fromSupabase ?? (await LocalStore.list());
-        if (!cancelled) setPeople(list);
-      } catch (e) {
-        console.error(e);
-        if (!cancelled) setError("Konnte Anmeldungen nicht laden. Versuche es später erneut.");
-      } finally {
-        if (!cancelled) setLoading(false);
+  async function loadCount() {
+    try {
+      const r = await fetch("/api/rsvps-count");
+      const j = await r.json();
+      if (typeof j.count === "number") setCount(j.count);
+    } catch {}
+  }
+  async function loadListIfAdmin() {
+    try {
+      const r = await fetch("/api/rsvps");
+      if (r.status === 200) {
+        const j = await r.json();
+        setPeople(j);
+        setAdmin(true);
+      } else {
+        setAdmin(false);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch {
+      setAdmin(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadCount();
+    loadListIfAdmin();
   }, []);
 
   async function handleAttend() {
     setError("");
     const trimmed = name.trim();
-    if (trimmed.length < 2) {
-      setError("Bitte gib deinen Namen ein (mind. 2 Zeichen).");
-      return;
-    }
-    if (trimmed.length > 60) {
-      setError("Name ist zu lang (max. 60 Zeichen).");
+    if (trimmed.length < 2 || trimmed.length > 60) {
+      setError("Bitte gib deinen Namen (2–60 Zeichen) ein.");
       return;
     }
     setSubmitting(true);
     try {
-      const payload = { name: trimmed, created_at: new Date().toISOString() };
-      const created = (await SupabaseStore.add(payload)) ?? (await (async () => {
-        return await LocalStore.add(payload);
-      })());
-      setPeople((prev) => [...prev, created]);
+      const r = await fetch("/api/rsvps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!r.ok) throw new Error("post_failed");
       setName("");
+      setCount((c) => c + 1);
+      if (admin) {
+        const j = await r.json();
+        setPeople((prev) => [...prev, j[0]]);
+      }
     } catch (e) {
-      console.error(e);
-      setError("Ups – Anmeldung fehlgeschlagen. Bitte kurz später nochmal versuchen.");
+      setError("Ups – Anmeldung fehlgeschlagen. Bitte später erneut versuchen.");
     } finally {
       setSubmitting(false);
     }
@@ -152,35 +72,42 @@ export default function RSVP40() {
 
   async function handleDelete(id) {
     if (!admin) return;
-    const ok = confirm("Diesen Eintrag wirklich löschen?");
-    if (!ok) return;
+    if (!confirm("Diesen Eintrag wirklich löschen?")) return;
     try {
-      // Versuche Supabase, fallback Local
-      const sup = await SupabaseStore.remove(id);
-      if (!sup) await LocalStore.remove(id);
+      const r = await fetch("/api/rsvps", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!r.ok) throw new Error("delete_failed");
       setPeople((prev) => prev.filter((p) => p.id !== id));
-    } catch (e) {
-      console.error(e);
-      alert("Löschen fehlgeschlagen. Bitte später erneut versuchen.");
+      setCount((c) => Math.max(0, c - 1));
+    } catch {
+      alert("Löschen fehlgeschlagen.");
     }
   }
 
-  function enterAdmin() {
-    const input = prompt("Admin-PIN eingeben:");
-    const expected = ADMIN_PIN || "1234";
-    if ((input ?? "") === expected) {
+  async function enterAdmin() {
+    const pin = prompt("Admin-PIN eingeben:");
+    if (!pin) return;
+    const r = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin }),
+    });
+    if (r.ok) {
       setAdmin(true);
-      localStorage.setItem(adminKey, "1");
+      setLoading(true);
+      await loadListIfAdmin();
     } else {
-      alert("Falsche PIN");
+      alert("Falsche PIN.");
     }
   }
   function leaveAdmin() {
     setAdmin(false);
-    localStorage.removeItem(adminKey);
+    setPeople([]);
   }
 
-  const count = people.length;
   const pct = Math.min(100, Math.round((count / TARGET) * 100));
 
   return (
@@ -198,7 +125,7 @@ export default function RSVP40() {
             Mein 40er – Let’s Party!
           </h1>
           <p className="mt-3 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
-            40 Jahre jung – jetzt heißt’s: Party, Musik und gute Laune! Sei dabei!
+            Es ist so weit: 40 Jahre voll mit Geschichten, Lachen und guten Menschen. Ich feiere – und du bist eingeladen!
           </p>
           <p className="mt-3 text-lg font-semibold text-blue-200">Freitag, 28. November · ab 18 Uhr · Eisarena Sillian</p>
         </motion.div>
@@ -249,7 +176,9 @@ export default function RSVP40() {
                 placeholder="Dein Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAttend(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAttend();
+                }}
                 className="px-3 py-2 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black/60 text-gray-100 placeholder:text-gray-400"
               />
               <button
@@ -260,11 +189,15 @@ export default function RSVP40() {
                 <Check className="w-4 h-4" /> Ich komme!
               </button>
             </div>
-            {error && (<p className="text-sm text-rose-400" role="alert">{error}</p>)}
+            {error && (
+              <p className="text-sm text-rose-400" role="alert">
+                {error}
+              </p>
+            )}
           </div>
         </section>
 
-        {/* Guest list */}
+        {/* Guest list (nur Admin) */}
         {admin && (
           <section className="mt-6">
             <h2 className="text-lg font-semibold mb-3">Bisher zugesagt</h2>
@@ -283,21 +216,19 @@ export default function RSVP40() {
                     className="flex items-center gap-3 bg-black/50 rounded-xl p-3 shadow-sm border border-blue-400/20"
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 via-fuchsia-400 to-amber-300 flex items-center justify-center text-lg">
-                      {pickEmoji(p.name)}
+                      {"🎉"}
                     </div>
                     <div className="flex-1">
                       <div className="font-medium leading-tight text-gray-100">{p.name}</div>
-                      <div className="text-xs text-gray-400">zugesagt: {formatTime(p.created_at)}</div>
+                      <div className="text-xs text-gray-400">zugesagt: {new Date(p.created_at).toLocaleString()}</div>
                     </div>
-                    {admin && (
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1"
-                        title="Eintrag löschen"
-                      >
-                        <Trash2 className="w-4 h-4" /> löschen
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDelete(p.id)}
+                      className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1"
+                      title="Eintrag löschen"
+                    >
+                      <Trash2 className="w-4 h-4" /> löschen
+                    </button>
                   </motion.li>
                 ))}
               </ul>
