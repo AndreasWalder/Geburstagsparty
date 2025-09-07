@@ -4,8 +4,8 @@ import { Check, Users2, PartyPopper, Lock, Trash2, Shield } from "lucide-react";
 
 const TARGET = 40;
 
-// 🎈 Schwebender Ballon mit zufälligen Farben
-function Balloon({ size = 90, delay = 0, className = "" }) {
+// 🎈 Schwebender Ballon (über gesamte Seite, zufällige Farbe & X-Drift)
+function Balloon({ size = 90, delay = 0 }) {
   const w = size;
   const h = Math.round(size * 1.25);
 
@@ -17,27 +17,34 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
   ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
+  // Zufällige horizontale Startposition (5%–95%) + Drift
+  const startX = Math.random() * 90 + 5;
+  const drift = Math.random() * 40 - 20; // -20px bis +20px
+
   return (
     <motion.div
-      initial={{ y: 60, opacity: 0 }}
+      initial={{ y: "110%", x: 0, opacity: 0 }}
       animate={{
-        y: [-10, -280, -460],
-        opacity: [0, 1, 0.85, 0],
+        y: ["110%", "-20%"],
+        x: [0, drift, drift * -0.5],
+        opacity: [0, 1, 0.9, 0],
         scale: [1, 1.05, 1],
       }}
       transition={{
-        duration: 9.5,
+        duration: 12 + Math.random() * 6,
         delay,
         repeat: Infinity,
         ease: "easeInOut",
       }}
-      className={`relative ${className}`}
-      style={{ width: w, height: h }}
+      className="absolute"
+      style={{ left: `${startX}%`, width: w, height: h }}
     >
+      {/* Ballon-Körper */}
       <div
         className="absolute inset-0 rounded-full shadow-xl"
         style={{ background: color, boxShadow: "0 8px 30px rgba(0,0,0,0.35)" }}
       />
+      {/* Glanzpunkt */}
       <div
         className="absolute rounded-full opacity-50"
         style={{
@@ -50,6 +57,7 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
           transform: "rotate(-25deg)",
         }}
       />
+      {/* Knoten */}
       <div
         className="absolute"
         style={{
@@ -62,6 +70,7 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
           borderRadius: 2,
         }}
       />
+      {/* Schnur */}
       <div
         className="absolute"
         style={{
@@ -78,24 +87,24 @@ function Balloon({ size = 90, delay = 0, className = "" }) {
   );
 }
 
-// 🎊 Dezent fallende Konfetti
+// 🎊 Konfetti – größer, startet tiefer & fällt länger (sichtbar auf Handy)
 function ConfettiPiece({ delay = 0 }) {
   const colors = ["#3b82f6", "#e879f9", "#fbbf24", "#22d3ee", "#f472b6"];
   const color = colors[Math.floor(Math.random() * colors.length)];
-  const left = Math.random() * 100;
+  const left = Math.random() * 100; // Prozent vom Screen
   const rotate = Math.random() * 360;
 
   return (
     <motion.div
-      initial={{ y: -10, opacity: 0, rotate }}
-      animate={{ y: ["-3%", "103%"], opacity: [0, 1, 1, 0], rotate: rotate + 180 }}
+      initial={{ y: -40, opacity: 0, rotate }}
+      animate={{ y: ["-5%", "110%"], opacity: [0, 1, 1, 0], rotate: rotate + 270 }}
       transition={{
-        duration: 7 + Math.random() * 4,
+        duration: 10 + Math.random() * 5,
         delay,
         repeat: Infinity,
         ease: "linear",
       }}
-      className="absolute w-2 h-3 rounded-sm"
+      className="absolute w-2.5 h-3.5 rounded-sm"
       style={{ left: `${left}%`, backgroundColor: color }}
     />
   );
@@ -108,7 +117,7 @@ export default function RSVP40() {
   const [people, setPeople] = useState([]);
   const [error, setError] = useState("");
   const [admin, setAdmin] = useState(false);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0); // öffentlicher Counter
 
   async function loadCount() {
     try {
@@ -125,7 +134,7 @@ export default function RSVP40() {
         const j = await r.json();
         setPeople(j);
         setAdmin(true);
-        setCount(j.length);
+        setCount(j.length); // sync für sichtbare Anzeige
       } else {
         setAdmin(false);
       }
@@ -220,42 +229,32 @@ export default function RSVP40() {
     setPeople([]);
   }
 
+  // Sichtbarer Counter: Admin → people.length; Gäste → count
   const visibleCount = admin ? people.length : count;
   const pct = Math.min(100, Math.ceil((visibleCount / TARGET) * 100));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-blue-950 text-gray-100">
-      {/* Hintergrund */}
+      {/* Hintergrund (Ballons + Konfetti) */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* weiche Farbverläufe */}
         <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full blur-3xl opacity-20 bg-blue-500" />
         <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-indigo-600" />
 
-        {/* Ballons links */}
-        <div className="hidden lg:flex flex-col absolute left-10 bottom-0 space-y-10">
-          <Balloon delay={0} size={88} />
-          <Balloon delay={2} size={72} />
-          <Balloon delay={4} size={82} />
-          <Balloon delay={6} size={76} />
-          <Balloon delay={8} size={94} />
-        </div>
+        {/* Ballons – nur 6, über Seite verteilt */}
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Balloon key={i} delay={i * 2} size={70 + Math.random() * 30} />
+        ))}
 
-        {/* Ballons rechts */}
-        <div className="hidden lg:flex flex-col absolute right-10 bottom-0 space-y-10">
-          <Balloon delay={1} size={90} />
-          <Balloon delay={3} size={68} />
-          <Balloon delay={5} size={96} />
-          <Balloon delay={7} size={78} />
-          <Balloon delay={9} size={84} />
-        </div>
-
-        {/* Konfetti */}
-        {Array.from({ length: 18 }).map((_, i) => (
-          <ConfettiPiece key={i} delay={i * 0.35} />
+        {/* Konfetti – dezenter Regen */}
+        {Array.from({ length: 15 }).map((_, i) => (
+          <ConfettiPiece key={i} delay={i * 0.5} />
         ))}
       </div>
 
       {/* Inhalt */}
       <div className="relative z-10">
+        {/* Header */}
         <header className="max-w-4xl mx-auto px-6 pt-14 pb-6 text-center">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-fuchsia-400 to-amber-300">
@@ -270,6 +269,7 @@ export default function RSVP40() {
           </motion.div>
         </header>
 
+        {/* Content */}
         <main className="max-w-4xl mx-auto px-6 pb-16">
           <section className="rounded-3xl shadow-2xl bg-black/40 backdrop-blur border border-blue-400/20">
             <div className="px-6 pt-6 pb-3 border-b border-blue-400/20">
@@ -329,6 +329,7 @@ export default function RSVP40() {
             </div>
           </section>
 
+          {/* Gästeliste (nur Admin) */}
           {admin && (
             <section className="mt-6">
               <h2 className="text-lg font-semibold mb-3">Bisher zugesagt</h2>
@@ -351,7 +352,11 @@ export default function RSVP40() {
                         <div className="font-medium leading-tight text-gray-100">{p.name}</div>
                         <div className="text-xs text-gray-400">zugesagt: {new Date(p.created_at).toLocaleString()}</div>
                       </div>
-                      <button onClick={() => handleDelete(p.id)} className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1" title="Eintrag löschen">
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1"
+                        title="Eintrag löschen"
+                      >
                         <Trash2 className="w-4 h-4" /> löschen
                       </button>
                     </motion.li>
