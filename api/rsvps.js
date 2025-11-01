@@ -1,9 +1,31 @@
 const base = process.env.SUPABASE_URL;
 const key  = process.env.SUPABASE_SERVICE_ROLE;
 
+const WINDOW_MS = 10 * 60 * 1000; // 10 Minuten
+
 function isAdmin(req) {
   const c = req.headers.cookie || '';
   return c.split(';').some(p => p.trim().startsWith('admin=1'));
+}
+
+function getClientIp(req) {
+  const xfwd = req.headers['x-forwarded-for'];
+  if (typeof xfwd === 'string' && xfwd.length > 0) {
+    const ip = xfwd.split(',')[0].trim();
+    if (ip) return ip;
+  }
+
+  const xRealIp = req.headers['x-real-ip'];
+  if (typeof xRealIp === 'string' && xRealIp.trim()) {
+    return xRealIp.trim();
+  }
+
+  return (
+    req.socket?.remoteAddress ||
+    req.connection?.remoteAddress ||
+    req.ip ||
+    ''
+  );
 }
 
 async function supabase(path, opts = {}) {
@@ -36,9 +58,34 @@ export default async function handler(req, res) {
       const body = JSON.parse(Buffer.concat(chunks).toString() || '{}');
       const name = (body.name || '').toString();
       const partner = body.partner === true;
+      const ip = getClientIp(req);
       if (name.length < 2 || name.length > 60) return res.status(400).json({ error: 'invalid_name' });
 
-      const r = await supabase('rsvps', { method: 'POST', body: JSON.stringify({ name, partner }) });
+      if (ip) {
+        const since = new Date(Date.now() - WINDOW_MS).toISOString();
+        const params = new URLSearchParams({
+          select: 'id',
+          limit: '1',
+        });
+        params.append('ip', `eq.${ip}`);
+        params.append('created_at', `gte.${since}`);
+        const limitPath = `rsvps?${params.toString()}`;
+        const limitRes = await supabase(limitPath);
+        if (limitRes.ok) {
+          const existing = await limitRes.json();
+          if (Array.isArray(existing) && existing.length > 0) {
+            return res.status(429).json({
+              error: 'too_many_per_ip',
+              message: 'Zu viele Registrierungen von dieser IP.',
+            });
+          }
+        }
+      }
+
+      const payload = { name, partner };
+      if (ip) payload.ip = ip;
+
+      const r = await supabase('rsvps', { method: 'POST', body: JSON.stringify(payload) });
       const txt = await r.text();
       res.setHeader('Content-Type', 'application/json');
       return res.status(r.status).send(txt);

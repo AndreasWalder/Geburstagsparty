@@ -197,14 +197,31 @@ export default function RSVP40() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: trimmed, partner: withPartner }),
       });
-      if (!r.ok) throw new Error("post_failed");
+      const responseText = await r.text();
+      let payload = null;
+      try {
+        payload = responseText ? JSON.parse(responseText) : null;
+      } catch {
+        payload = null;
+      }
+
+      if (!r.ok) {
+        if (payload && typeof payload === "object" && payload.error === "too_many_per_ip") {
+          setError("Zu viele Registrierungen von dieser IP.");
+          return;
+        }
+        throw new Error("post_failed");
+      }
       setName("");
       setWithPartner(false);
 
       if (admin) {
-        const j = await r.json();
-        setPeople((prev) => [...prev, j[0]]);
-        setCount((c) => c + 1);
+        if (Array.isArray(payload) && payload[0]) {
+          setPeople((prev) => [...prev, payload[0]]);
+          setCount((c) => c + 1);
+        } else {
+          await loadListIfAdmin();
+        }
       } else {
         await loadCount();
       }
@@ -380,6 +397,9 @@ export default function RSVP40() {
                       <div className="flex-1">
                         <div className="font-medium leading-tight text-gray-100">{p.name}</div>
                         <div className="text-xs text-gray-400">zugesagt: {new Date(p.created_at).toLocaleString()}</div>
+                        {p.ip && (
+                          <div className="text-[11px] text-gray-500">IP: {p.ip}</div>
+                        )}
                         {p.partner && (
                           <div className="text-xs text-blue-200 mt-1">kommt mit Partner</div>
                         )}
