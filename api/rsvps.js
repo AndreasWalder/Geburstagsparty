@@ -35,9 +35,10 @@ export default async function handler(req, res) {
       const chunks = []; for await (const c of req) chunks.push(c);
       const body = JSON.parse(Buffer.concat(chunks).toString() || '{}');
       const name = (body.name || '').toString();
+      const partner = body.partner === true;
       if (name.length < 2 || name.length > 60) return res.status(400).json({ error: 'invalid_name' });
 
-      const r = await supabase('rsvps', { method: 'POST', body: JSON.stringify({ name }) });
+      const r = await supabase('rsvps', { method: 'POST', body: JSON.stringify({ name, partner }) });
       const txt = await r.text();
       res.setHeader('Content-Type', 'application/json');
       return res.status(r.status).send(txt);
