@@ -142,6 +142,7 @@ export default function RSVP40() {
   const [error, setError] = useState("");
   const [admin, setAdmin] = useState(false);
   const [count, setCount] = useState(0);
+  const [withPartner, setWithPartner] = useState(false);
 
   async function loadCount() {
     try {
@@ -194,10 +195,11 @@ export default function RSVP40() {
       const r = await fetch("/api/rsvps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
+        body: JSON.stringify({ name: trimmed, partner: withPartner }),
       });
       if (!r.ok) throw new Error("post_failed");
       setName("");
+      setWithPartner(false);
 
       if (admin) {
         const j = await r.json();
@@ -342,6 +344,15 @@ export default function RSVP40() {
                   <Check className="w-4 h-4" /> Ich komme!
                 </button>
               </div>
+              <label className="flex items-center gap-2 text-sm text-gray-300 select-none">
+                <input
+                  type="checkbox"
+                  checked={withPartner}
+                  onChange={(e) => setWithPartner(e.target.checked)}
+                  className="h-4 w-4 rounded border border-gray-500 bg-black/60 text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <span>Ich bringe meinen Partner mit</span>
+              </label>
               {error && (<p className="text-sm text-rose-400" role="alert">{error}</p>)}
             </div>
           </section>
@@ -367,6 +378,9 @@ export default function RSVP40() {
                       <div className="flex-1">
                         <div className="font-medium leading-tight text-gray-100">{p.name}</div>
                         <div className="text-xs text-gray-400">zugesagt: {new Date(p.created_at).toLocaleString()}</div>
+                        {p.partner && (
+                          <div className="text-xs text-blue-200 mt-1">kommt mit Partner</div>
+                        )}
                       </div>
                       <button onClick={() => handleDelete(p.id)} className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1" title="Eintrag löschen">
                         <Trash2 className="w-4 h-4" /> löschen
