@@ -327,15 +327,26 @@ export default function RSVP40() {
             </div>
 
             <div className="px-6 py-5 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
-                <input
-                  type="text"
-                  placeholder="Dein Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleAttend(); }}
-                  className="px-3 py-2 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black/60 text-gray-100 placeholder:text-gray-400"
-                />
+              <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-[1fr_auto] md:gap-3 md:items-start">
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Dein Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAttend(); }}
+                    className="px-3 py-2 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black/60 text-gray-100 placeholder:text-gray-400"
+                  />
+                  <label className="flex items-center gap-2 text-sm text-gray-300 select-none">
+                    <input
+                      type="checkbox"
+                      checked={withPartner}
+                      onChange={(e) => setWithPartner(e.target.checked)}
+                      className="h-4 w-4 rounded border border-gray-500 bg-black/60 text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <span>Ich bringe meinen Partner mit</span>
+                  </label>
+                </div>
                 <button
                   onClick={handleAttend}
                   disabled={submitting}
@@ -344,15 +355,6 @@ export default function RSVP40() {
                   <Check className="w-4 h-4" /> Ich komme!
                 </button>
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-300 select-none">
-                <input
-                  type="checkbox"
-                  checked={withPartner}
-                  onChange={(e) => setWithPartner(e.target.checked)}
-                  className="h-4 w-4 rounded border border-gray-500 bg-black/60 text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <span>Ich bringe meinen Partner mit</span>
-              </label>
               {error && (<p className="text-sm text-rose-400" role="alert">{error}</p>)}
             </div>
           </section>
