@@ -397,6 +397,9 @@ export default function RSVP40() {
                       <div className="flex-1">
                         <div className="font-medium leading-tight text-gray-100">{p.name}</div>
                         <div className="text-xs text-gray-400">zugesagt: {new Date(p.created_at).toLocaleString()}</div>
+                        {p.ip && (
+                          <div className="text-[11px] text-gray-500">IP: {p.ip}</div>
+                        )}
                         {p.partner && (
                           <div className="text-xs text-blue-200 mt-1">kommt mit Partner</div>
                         )}
